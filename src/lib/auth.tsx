@@ -8,12 +8,18 @@ interface AuthContextType {
   session: Session | null;
   dbUser: DbUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, name: string, role?: 'worker' | 'admin') => Promise<{ error: Error | null }>;
+  signIn: (username: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (username: string, password: string, name: string, role?: 'worker' | 'admin') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Helper function to convert username to email format for Supabase
+function usernameToEmail(username: string): string {
+  // Supabase requires email format, so we use internal domain
+  return `${username}@winner-security.local`;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -64,12 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function signIn(email: string, password: string) {
+  async function signIn(username: string, password: string) {
+    const email = usernameToEmail(username);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   }
 
-  async function signUp(email: string, password: string, name: string, role: 'worker' | 'admin' = 'worker') {
+  async function signUp(username: string, password: string, name: string, role: 'worker' | 'admin' = 'worker') {
+    const email = usernameToEmail(username);
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({

@@ -13,7 +13,7 @@ export default function LoginPage() {
   const { user, dbUser, loading, signIn, signUp } = useAuth();
   const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'worker' | 'admin'>('worker');
@@ -31,13 +31,13 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(username.trim(), password);
         if (error) {
           toast({
             variant: 'destructive',
             title: 'Greška pri prijavi',
             description: error.message === 'Invalid login credentials' 
-              ? 'Pogrešan email ili lozinka' 
+              ? 'Pogrešno korisničko ime ili lozinka' 
               : error.message,
           });
         }
@@ -52,11 +52,21 @@ export default function LoginPage() {
           return;
         }
         
-        const { error } = await signUp(email, password, name.trim(), role);
+        if (!username.trim()) {
+          toast({
+            variant: 'destructive',
+            title: 'Greška',
+            description: 'Korisničko ime je obavezno',
+          });
+          setSubmitting(false);
+          return;
+        }
+        
+        const { error } = await signUp(username.trim(), password, name.trim(), role);
         if (error) {
           let message = error.message;
-          if (error.message.includes('already registered')) {
-            message = 'Email je već registrovan';
+          if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+            message = 'Korisničko ime je već registrovan';
           }
           toast({
             variant: 'destructive',
@@ -135,14 +145,16 @@ export default function LoginPage() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Korisničko ime</Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@primer.com"
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="korisnicko_ime"
                 required
+                pattern="[a-zA-Z0-9_]+"
+                title="Korisničko ime može sadržati samo slova, brojeve i donje crtice"
               />
             </div>
 
